@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Tech/Service Strategy Log — Dasom</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <meta name="theme-color" content="#111827" />
+  <meta name="description" content="A lightweight personal archive for daily tech/service strategy notes." />
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🗂️</text></svg>">
+  <style>
+    .glass { backdrop-filter: blur(8px); background: rgba(255,255,255,0.06); }
+    .prose-like p { margin: 0.25rem 0; }
+    .prose-like pre { white-space: pre-wrap; }
+    .tag { display:inline-block; padding:0.2rem 0.5rem; font-size:0.75rem; border-radius:9999px; border:1px solid #374151; }
+  </style>
+</head>
+<body class="min-h-screen bg-gray-950 text-gray-100">
+  <header class="sticky top-0 z-20 border-b border-gray-800 bg-gray-950/80 glass">
+    <div class="mx-auto max-w-6xl px-4 py-4 flex items-center justify-between">
+      <div class="flex items-center gap-3">
+        <span class="text-2xl">🗂️</span>
+        <div>
+          <h1 class="text-xl font-semibold">Tech/Service Strategy Log</h1>
+          <p class="text-xs text-gray-400">Daily archive · IT + Mobility · Healthcare · Media/Content · Greentech</p>
+        </div>
+      </div>
+      <div class="flex items-center gap-2">
+        <!-- 로컬 Export/Import -->
+        <a href="#" id="exportMd" class="px-3 py-1.5 rounded-xl border border-gray-700 text-sm hover:bg-gray-800">Export .md</a>
+        <a href="#" id="exportJson" class="px-3 py-1.5 rounded-xl border border-gray-700 text-sm hover:bg-gray-800">Export .json</a>
+        <a href="#" id="exportCsv" class="px-3 py-1.5 rounded-xl border border-gray-700 text-sm hover:bg-gray-800">Export .csv</a>
+        <label class="px-3 py-1.5 rounded-xl border border-gray-700 text-sm hover:bg-gray-800 cursor-pointer">
+          Import JSON
+          <input type="file" id="importJson" accept="application/json" class="hidden">
+        </label>
+        <!-- Google Drive 연동 버튼 -->
+        <button id="googleSignIn" class="px-3 py-1.5 rounded-xl border border-gray-700 text-sm hover:bg-gray-800">Google 로그인</button>
+        <button id="googleSignOut" class="px-3 py-1.5 rounded-xl border border-gray-700 text-sm hover:bg-gray-800 hidden">로그아웃</button>
+        <button id="driveSync" class="px-3 py-1.5 rounded-xl border border-gray-700 text-sm hover:bg-gray-800">Drive에서 불러오기</button>
+        <button id="driveBackup" class="px-3 py-1.5 rounded-xl border border-gray-700 text-sm hover:bg-gray-800">Drive에 백업</button>
+      </div>
+    </div>
+  </header>
+
+  <main class="mx-auto max-w-6xl px-4 py-6">
+    <!-- Prompt of the Day -->
+    <section class="mb-6">
+      <div class="rounded-2xl border border-gray-800 bg-gray-900 p-4">
+        <div class="flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <div class="text-xs uppercase tracking-wide text-gray-400">Prompt of the Day</div>
+            <div id="potd" class="mt-1 text-lg font-medium"></div>
+            <div id="potdMeta" class="text-xs text-gray-400"></div>
+          </div>
+          <div class="flex items-center gap-2">
+            <button id="quickOneLiner" class="px-3 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-sm">+ One-line quick note</button>
+            <button id="darkToggle" class="px-3 py-2 rounded-xl border border-gray-700 text-sm hover:bg-gray-800">🌗</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Tabs -->
+    <section class="mb-6">
+      <div class="flex gap-2">
+        <button class="tab-btn px-3 py-2 rounded-xl border border-gray-700 text-sm hover:bg-gray-800" data-tab="capture">Capture</button>
+        <button class="tab-btn px-3 py-2 rounded-xl border border-gray-700 text-sm hover:bg-gray-800" data-tab="archive">Archive</button>
+        <span class="text-xs text-gray-400 ml-2">Tip: 작은 기록도 OK. 오늘은 한 문장만 남겨도 됩니다.</span>
+      </div>
+    </section>
+
+    <!-- Capture form -->
+    <section id="tab-capture" class="rounded-2xl border border-gray-800 bg-gray-900 p-4">
+      <form id="entryForm" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div>
+          <label class="block text-sm text-gray-300 mb-1">Date</label>
+          <input id="date" type="date" class="w-full bg-gray-950 border border-gray-800 rounded-xl px-3 py-2" />
+        </div>
+        <div>
+          <label class="block text-sm text-gray-300 mb-1">Language</label>
+          <select id="lang" class="w-full bg-gray-950 border border-gray-800 rounded-xl px-3 py-2">
+            <option value="KR">한국어</option>
+            <option value="EN">English</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-sm text-gray-300 mb-1">Category</label>
+          <select id="category" class="w-full bg-gray-950 border border-gray-800 rounded-xl px-3 py-2">
+            <option>Company</option>
+            <option>Service</option>
+            <option>Technology</option>
+            <option>Trend</option>
+            <option>Other</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-sm text-gray-300 mb-1">Industry</label>
+          <select id="industry" class="w-full bg-gray-950 border border-gray-800 rounded-xl px-3 py-2">
+            <option>IT</option>
+            <option>Mobility</option>
+            <option>Healthcare</option>
+            <option>Media/Content</option>
+            <option>Greentech</option>
+            <option>Fintech</option>
+            <option>Other</option>
+          </select>
+        </div>
+        <div class="md:col-span-2">
+          <label class="block text-sm text-gray-300 mb-1">[오늘 읽은 것 / What I read]</label>
+          <textarea id="read" rows="2" class="w-full bg-gray-950 border border-gray-800 rounded-xl px-3 py-2"></textarea>
+        </div>
+        <div class="md:col-span-2">
+          <label class="block text-sm text-gray-300 mb-1">[떠오른 아이디어 / Idea]</label>
+          <textarea id="idea" rows="2" class="w-full bg-gray-950 border border-gray-800 rounded-xl px-3 py-2"></textarea>
+        </div>
+        <div class="md:col-span-2">
+          <label class="block text-sm text-gray-300 mb-1">[연결된 흐름 / Flow]</label>
+          <textarea id="flow" rows="2" class="w-full bg-gray-950 border border-gray-800 rounded-xl px-3 py-2"></textarea>
+        </div>
+        <div class="md:col-span-2">
+          <label class="block text-sm text-gray-300 mb-1">One-liner (핵심 한 줄)</label>
+          <input id="one" class="w-full bg-gray-950 border border-gray-800 rounded-xl px-3 py-2" placeholder="한 줄 요약" />
+        </div>
+        <div class="md:col-span-2">
+          <label class="block text-sm text-gray-300 mb-1">Tags (comma-separated)</label>
+          <input id="tags" class="w-full bg-gray-950 border border-gray-800 rounded-xl px-3 py-2" placeholder="ai, subscription, cross-border" />
+        </div>
+        <div class="md:col-span-2 flex items-center justify-between gap-3">
+          <div class="text-xs text-gray-400">저장 후 아래 Archive에서 검색/필터 가능합니다.</div>
+          <div class="flex gap-2">
+            <button type="reset" class="px-3 py-2 rounded-xl border border-gray-700 text-sm hover:bg-gray-800">Reset</button>
+            <button type="submit" class="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-sm font-semibold">Save</button>
+          </div>
+        </div>
+      </form>
+    </section>
+
+    <!-- Archive list -->
+    <section id="tab-archive" class="hidden rounded-2xl border border-gray-800 bg-gray-900 p-4">
+      <div class="flex flex-wrap items-end gap-3 mb-4">
+        <div>
+          <label class="block text-xs text-gray-400 mb-1">Search</label>
+          <input id="q" class="bg-gray-950 border border-gray-800 rounded-xl px-3 py-2" placeholder="keyword" />
+        </div>
+        <div>
+          <label class="block text-xs text-gray-400 mb-1">Category</label>
+          <select id="fCategory" class="bg-gray-950 border border-gray-800 rounded-xl px-3 py-2">
+            <option value="">All</option>
+            <option>Company</option>
+            <option>Service</option>
+            <option>Technology</option>
+            <option>Trend</option>
+            <option>Other</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-xs text-gray-400 mb-1">Industry</label>
+          <select id="fIndustry" class="bg-gray-950 border border-gray-800 rounded-xl px-3 py-2">
+            <option value="">All</option>
+            <option>IT</option>
+            <option>Mobility</option>
+            <option>Healthcare</option>
+            <option>Media/Content</option>
+            <option>Greentech</option>
+            <option>Fintech</option>
+            <option>Other</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-xs text-gray-400 mb-1">From</label>
+          <input id="from" type="date" class="bg-gray-950 border border-gray-800 rounded-xl px-3 py-2" />
+        </div>
+        <div>
+          <label class="block text-xs text-gray-400 mb-1">To</label>
+          <input id="to" type="date" class="bg-gray-950 border border-gray-800 rounded-xl px-3 py-2" />
+        </div>
+        <button id="clearFilters" class="px-3 py-2 rounded-xl border border-gray-700 text-sm hover:bg-gray-800">Clear</button>
+      </div>
+      <div id="stats" class="mb-3 text-xs text-gray-400"></div>
+      <div id="list" class="grid grid-cols-1 gap-3"></div>
+    </section>
+  </main>
+
+  <footer class="mx-auto max-w-6xl px-4 py-10 text-center text-xs text-gray-500">
+    Built for Dasom · Local-first archive (browser storage) + Google Drive sync.
+  </footer>
+
+  <!-- Google Identity & Drive API (토큰/REST 호출용) -->
+  <script src="https://accounts.google.com/gsi/client" async defer></script>
+  <!-- (선택) gapi가 필요할 때를 대비해 포함하지만, 아래 코드는 fetch REST로 동작 -->
+  <script src="https://apis.google.com/js/api.js"></script>
+
+  <script src="app.js"></script>
+</body>
+</html>
