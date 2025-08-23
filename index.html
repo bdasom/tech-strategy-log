@@ -13,9 +13,12 @@
     .prose-like p { margin: 0.25rem 0; }
     .prose-like pre { white-space: pre-wrap; }
     .tag { display:inline-block; padding:0.2rem 0.5rem; font-size:0.75rem; border-radius:9999px; border:1px solid #374151; }
-    .rte { min-height: 120px; outline: none; }
+    .rte { min-height: 140px; outline: none; }
     .rte a { text-decoration: underline; }
     .thumb { width: 84px; height: 84px; object-fit: cover; border-radius: 0.75rem; border: 1px solid #374151; }
+    .toolbar button, .toolbar select, .toolbar input[type="color"] { border-radius: 0.75rem; border:1px solid #374151; padding: 0.35rem 0.6rem; font-size: 0.85rem; background: #0b1220; }
+    .toolbar button:hover, .toolbar select:hover { background:#111827; }
+    .toolbar .split { width:1px; height:28px; background:#1f2937; display:inline-block; margin:0 6px; }
   </style>
 </head>
 <body class="min-h-screen bg-gray-950 text-gray-100">
@@ -98,19 +101,50 @@
           </select>
         </div>
 
-        <!-- RTE toolbar + editor -->
+        <!-- Rich text toolbar + editor -->
         <div class="md:col-span-2">
-          <div class="mb-2 flex flex-wrap gap-2">
-            <button type="button" class="rte-btn px-3 py-1.5 rounded-xl border border-gray-700 text-sm hover:bg-gray-800" data-cmd="bold"><b>B</b></button>
-            <button type="button" class="rte-btn px-3 py-1.5 rounded-xl border border-gray-700 text-sm hover:bg-gray-800 italic" data-cmd="italic">I</button>
-            <button type="button" class="rte-btn px-3 py-1.5 rounded-xl border border-gray-700 text-sm hover:bg-gray-800" data-cmd="insertUnorderedList">• List</button>
-            <button type="button" class="rte-btn px-3 py-1.5 rounded-xl border border-gray-700 text-sm hover:bg-gray-800" data-cmd="formatBlock" data-value="H1">H1</button>
-            <button type="button" class="rte-btn px-3 py-1.5 rounded-xl border border-gray-700 text-sm hover:bg-gray-800" data-cmd="formatBlock" data-value="H2">H2</button>
-            <button type="button" class="rte-btn px-3 py-1.5 rounded-xl border border-gray-700 text-sm hover:bg-gray-800" data-cmd="formatBlock" data-value="BLOCKQUOTE">❝</button>
-            <button type="button" class="rte-btn px-3 py-1.5 rounded-xl border border-gray-700 text-sm hover:bg-gray-800" data-cmd="formatBlock" data-value="PRE">Code</button>
-            <button type="button" id="rteLink" class="px-3 py-1.5 rounded-xl border border-gray-700 text-sm hover:bg-gray-800">Link</button>
-            <button type="button" id="rteImg" class="px-3 py-1.5 rounded-xl border border-gray-700 text-sm hover:bg-gray-800">+ Image</button>
-            <button type="button" id="rteVideo" class="px-3 py-1.5 rounded-xl border border-gray-700 text-sm hover:bg-gray-800">+ Video</button>
+          <div class="toolbar mb-2 flex flex-wrap items-center gap-2">
+            <!-- basics -->
+            <button type="button" class="rte-btn" data-cmd="bold"><b>B</b></button>
+            <button type="button" class="rte-btn italic" data-cmd="italic">I</button>
+            <button type="button" class="rte-btn" data-cmd="insertUnorderedList">• List</button>
+            <button type="button" class="rte-btn" data-cmd="insertOrderedList">1. List</button>
+            <span class="split"></span>
+            <!-- headings / blocks -->
+            <button type="button" class="rte-btn" data-cmd="formatBlock" data-value="H1">H1</button>
+            <button type="button" class="rte-btn" data-cmd="formatBlock" data-value="H2">H2</button>
+            <button type="button" class="rte-btn" data-cmd="formatBlock" data-value="BLOCKQUOTE">❝</button>
+            <button type="button" class="rte-btn" data-cmd="formatBlock" data-value="PRE">Code</button>
+            <span class="split"></span>
+            <!-- font family -->
+            <select id="rteFont" title="Font family">
+              <option value="" selected>Font</option>
+              <option value="system-ui, -apple-system, Segoe UI, Roboto, Noto Sans KR, sans-serif">System</option>
+              <option value="Noto Sans KR, Apple SD Gothic Neo, Malgun Gothic, sans-serif">Noto Sans KR</option>
+              <option value="Inter, Roboto, Helvetica Neue, Arial, sans-serif">Inter</option>
+              <option value="Georgia, Cambria, Times New Roman, serif">Serif</option>
+              <option value="ui-monospace, SFMono-Regular, Menlo, Consolas, monospace">Monospace</option>
+            </select>
+            <!-- font size -->
+            <select id="rteSize" title="Font size">
+              <option value="">Size</option>
+              <option value="12">12px</option><option value="14">14px</option><option value="16">16px</option>
+              <option value="18">18px</option><option value="20">20px</option><option value="24">24px</option>
+              <option value="28">28px</option><option value="32">32px</option>
+            </select>
+            <span class="split"></span>
+            <!-- colors -->
+            <label class="text-xs text-gray-400">A
+              <input id="rteColor" type="color" value="#e5e7eb" />
+            </label>
+            <label class="text-xs text-gray-400">HL
+              <input id="rteHighlight" type="color" value="#3b82f6" />
+            </label>
+            <button type="button" id="rteClear" title="Clear formatting">Clear</button>
+            <span class="split"></span>
+            <button type="button" id="rteLink">Link</button>
+            <button type="button" id="rteImg">+ Image</button>
+            <button type="button" id="rteVideo">+ Video</button>
             <input type="file" id="mediaFile" accept="image/*,video/*" class="hidden">
           </div>
           <label class="block text-sm text-gray-300 mb-1">Rich note (서식/미디어 가능)</label>
@@ -186,8 +220,8 @@
     Built for Dasom · Local-first archive + Google Drive sync.
   </footer>
 
-  <!-- GIS -->
   <script src="https://accounts.google.com/gsi/client" async defer></script>
   <script src="app.js"></script>
 </body>
 </html>
+
