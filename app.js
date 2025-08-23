@@ -66,20 +66,125 @@ $('quickOneLiner').addEventListener('click', () => {
   alert('Saved ✅');
 });
 
-// -----------------------
-// RTE (contenteditable) with extra toolbar
-// -----------------------
+// =======================
+// RTE (contenteditable) + Advanced controls
+// =======================
+
+// Basic buttons (B/I/List/Headings/Quote/Code)
 document.querySelectorAll('.rte-btn').forEach(b => {
   b.addEventListener('click', () => {
     const cmd = b.dataset.cmd;
     const val = b.dataset.value || null;
+    // styleWithCSS true → span 스타일로 적용
+    document.execCommand('styleWithCSS', false, true);
     document.execCommand(cmd, false, val);
   });
 });
+
+// Link
 $('rteLink').addEventListener('click', () => {
   const url = prompt('링크 URL?');
-  if (url) document.execCommand('createLink', false, url);
+  if (url) {
+    document.execCommand('createLink', false, url);
+  }
 });
+
+// Font family
+$('rteFont').addEventListener('change', (e) => {
+  const family = e.target.value;
+  if (!family) return;
+  applyCssToSelection('font-family', family);
+});
+
+// Font size (px)
+$('rteSize').addEventListener('change', (e) => {
+  const px = e.target.value;
+  if (!px) return;
+  applyCssToSelection('font-size', px + 'px');
+});
+
+// Text color
+$('rteColor').addEventListener('input', (e) => {
+  const color = e.target.value;
+  // foreColor로 시도 + selection span 스타일 보정
+  document.execCommand('foreColor', false, color);
+  applyCssToSelection('color', color);
+});
+
+// Highlight color
+$('rteHighlight').addEventListener('input', (e) => {
+  const color = e.target.value;
+  // 크롬: hiliteColor, 일부 브라우저: backColor
+  document.execCommand('hiliteColor', false, color);
+  document.execCommand('backColor', false, color);
+  applyCssToSelection('background-color', color);
+});
+
+// Clear formatting
+$('rteClear').addEventListener('click', () => {
+  document.execCommand('removeFormat', false, null);
+  // 링크 제거는 별도
+  unwrapTag('A');
+});
+
+// Selection helpers
+function getRange() {
+  const sel = window.getSelection();
+  if (!sel || sel.rangeCount === 0) return null;
+  return sel.getRangeAt(0);
+}
+function applyCssToSelection(prop, value) {
+  const range = getRange();
+  const editor = $('rich');
+  if (!range || !editor.contains(range.commonAncestorContainer)) {
+    editor.focus();
+    return; // 범위 없으면 일단 포커스만
+  }
+  if (range.collapsed) {
+    // 커서만 있을 때: 앞으로 입력될 텍스트에 스타일 적용되도록 span 삽입
+    const span = document.createElement('span');
+    span.style.setProperty(prop, value);
+    span.innerHTML = '&#8203;'; // zero-width space
+    range.insertNode(span);
+    // 커서를 span 끝으로
+    const newRange = document.createRange();
+    newRange.setStart(span, 1);
+    newRange.setEnd(span, 1);
+    const sel = window.getSelection();
+    sel.removeAllRanges(); sel.addRange(newRange);
+    return;
+  }
+  try {
+    // 선택된 내용을 span으로 감싸기
+    const wrapper = document.createElement('span');
+    wrapper.style.setProperty(prop, value);
+    range.surroundContents(wrapper);
+  } catch (err) {
+    // 부분 선택이 텍스트/요소 섞여 있으면 surroundContents가 실패할 수 있음 → execCommand fallback
+    document.execCommand('styleWithCSS', false, true);
+    if (prop === 'font-size') {
+      document.execCommand('fontSize', false, 3); // 임시
+    } else if (prop === 'font-family') {
+      document.execCommand('fontName', false, value);
+    } else if (prop === 'color') {
+      document.execCommand('foreColor', false, value);
+    } else if (prop === 'background-color') {
+      document.execCommand('hiliteColor', false, value);
+    }
+  }
+}
+function unwrapTag(tagName) {
+  const sel = window.getSelection();
+  if (!sel || sel.rangeCount === 0) return;
+  const range = sel.getRangeAt(0);
+  const container = range.commonAncestorContainer.nodeType === 1 ? range.commonAncestorContainer : range.commonAncestorContainer.parentNode;
+  const links = container.querySelectorAll(tagName);
+  links.forEach(el => {
+    const parent = el.parentNode;
+    while (el.firstChild) parent.insertBefore(el.firstChild, el);
+    parent.removeChild(el);
+  });
+}
 
 // 미디어: Drive 업로드 → rich 삽입
 $('rteImg').addEventListener('click', () => $('mediaFile').click());
@@ -111,9 +216,9 @@ function insertMediaIntoRich(meta) {
   }
 }
 
-// -----------------------
+// =======================
 // Save / Edit
-// -----------------------
+// =======================
 $('entryForm').addEventListener('submit', (e) => {
   e.preventDefault();
   const item = {
@@ -242,7 +347,7 @@ renderList();
 function section(title, text) { if (!text) return ''; return `<p><span class="text-gray-400">${title}:</span> ${escapeHtml(text)}</p>`; }
 function richSection(html) { if (!html) return ''; return `<div class="mt-2 border border-gray-800 rounded-xl p-3">${html}</div>`; }
 function tagsView(tags) { if (!tags || !tags.length) return ''; return `<div class="mt-2 flex flex-wrap gap-1">${tags.map(t => `<span class="tag">${escapeHtml(t)}</span>`).join('')}</div>`; }
-function escapeHtml(s) { return (s || '').replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&gt;','>':'&quot;',"'":'&#039;'}[m])); }
+function escapeHtml(s) { return (s || '').replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&quot;',"'":'&#039;'}[m])); }
 
 // Exporters
 function download(filename, text) {
@@ -311,7 +416,7 @@ $('googleSignOut').addEventListener('click', signout);
 $('driveBackup').addEventListener('click', backupToDrive);
 $('driveSync').addEventListener('click', syncFromDrive);
 
-// 1) Sign in → auto-restore
+// Sign in → auto restore
 function ensureSignin() {
   if (!tokenClient) {
     if (!window.google || !google.accounts?.oauth2) { alert('Google Identity 스크립트를 불러오지 못했습니다.'); return; }
@@ -332,12 +437,12 @@ function signout() {
   alert('로그아웃 완료');
 }
 
-// 2) Auto backup (every 1 min when dirty)
+// Auto backup (dirty, every 1 min)
 setInterval(() => {
   if (accessToken && dirty) { backupToDrive().catch(()=>{}); dirty = false; }
 }, 60 * 1000);
 
-// 3) Common fetch
+// Common fetch
 async function driveFetch(url, options = {}) {
   if (!accessToken) { alert('먼저 Google 로그인 해주세요.'); throw new Error('NO_TOKEN'); }
   const res = await fetch(url, { ...options, headers: { Authorization: `Bearer ${accessToken}`, ...(options.headers||{}) }});
@@ -345,7 +450,7 @@ async function driveFetch(url, options = {}) {
   return res;
 }
 
-// 4) Find or create file
+// Find or create file
 async function findOrCreateFile() {
   const q = encodeURIComponent("name = 'tech-strategy-log.json' and trashed = false");
   const res = await driveFetch(`https://www.googleapis.com/drive/v3/files?q=${q}&fields=files(id,name)`);
@@ -359,7 +464,7 @@ async function findOrCreateFile() {
   driveFileId = created.id; return driveFileId;
 }
 
-// 5) Backup
+// Backup
 async function backupToDrive() {
   try {
     if (!accessToken) return ensureSignin();
@@ -374,7 +479,7 @@ async function backupToDrive() {
   } catch (e) { console.error('backupToDrive failed:', e); }
 }
 
-// 6) Restore (merge by most recent updatedAt)
+// Restore (merge by most recent updatedAt)
 async function syncFromDrive() {
   try {
     if (!accessToken) return ensureSignin();
@@ -400,7 +505,7 @@ async function syncFromDrive() {
   } catch (e) { console.error('syncFromDrive failed:', e); }
 }
 
-// 7) Media upload (Drive + public link)
+// Media upload (Drive + public link)
 async function uploadMediaToDrive(file) {
   if (!accessToken) { await ensureSignin(); }
   const metadata = { name: file.name, mimeType: file.type };
