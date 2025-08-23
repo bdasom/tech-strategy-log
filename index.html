@@ -98,19 +98,19 @@
           </select>
         </div>
 
-        <!-- Rich text toolbar + editor -->
+        <!-- RTE toolbar + editor -->
         <div class="md:col-span-2">
           <div class="mb-2 flex flex-wrap gap-2">
-            <button type="button" class="rte-btn" data-cmd="bold"><b>B</b></button>
-            <button type="button" class="rte-btn italic" data-cmd="italic">I</button>
-            <button type="button" class="rte-btn" data-cmd="insertUnorderedList">• List</button>
-            <button type="button" class="rte-btn" data-cmd="formatBlock" data-value="H1">H1</button>
-            <button type="button" class="rte-btn" data-cmd="formatBlock" data-value="H2">H2</button>
-            <button type="button" class="rte-btn" data-cmd="formatBlock" data-value="BLOCKQUOTE">❝</button>
-            <button type="button" class="rte-btn" data-cmd="formatBlock" data-value="PRE">Code</button>
-            <button type="button" id="rteLink">Link</button>
-            <button type="button" id="rteImg">+ Image</button>
-            <button type="button" id="rteVideo">+ Video</button>
+            <button type="button" class="rte-btn px-3 py-1.5 rounded-xl border border-gray-700 text-sm hover:bg-gray-800" data-cmd="bold"><b>B</b></button>
+            <button type="button" class="rte-btn px-3 py-1.5 rounded-xl border border-gray-700 text-sm hover:bg-gray-800 italic" data-cmd="italic">I</button>
+            <button type="button" class="rte-btn px-3 py-1.5 rounded-xl border border-gray-700 text-sm hover:bg-gray-800" data-cmd="insertUnorderedList">• List</button>
+            <button type="button" class="rte-btn px-3 py-1.5 rounded-xl border border-gray-700 text-sm hover:bg-gray-800" data-cmd="formatBlock" data-value="H1">H1</button>
+            <button type="button" class="rte-btn px-3 py-1.5 rounded-xl border border-gray-700 text-sm hover:bg-gray-800" data-cmd="formatBlock" data-value="H2">H2</button>
+            <button type="button" class="rte-btn px-3 py-1.5 rounded-xl border border-gray-700 text-sm hover:bg-gray-800" data-cmd="formatBlock" data-value="BLOCKQUOTE">❝</button>
+            <button type="button" class="rte-btn px-3 py-1.5 rounded-xl border border-gray-700 text-sm hover:bg-gray-800" data-cmd="formatBlock" data-value="PRE">Code</button>
+            <button type="button" id="rteLink" class="px-3 py-1.5 rounded-xl border border-gray-700 text-sm hover:bg-gray-800">Link</button>
+            <button type="button" id="rteImg" class="px-3 py-1.5 rounded-xl border border-gray-700 text-sm hover:bg-gray-800">+ Image</button>
+            <button type="button" id="rteVideo" class="px-3 py-1.5 rounded-xl border border-gray-700 text-sm hover:bg-gray-800">+ Video</button>
             <input type="file" id="mediaFile" accept="image/*,video/*" class="hidden">
           </div>
           <label class="block text-sm text-gray-300 mb-1">Rich note (서식/미디어 가능)</label>
@@ -186,8 +186,8 @@
     Built for Dasom · Local-first archive + Google Drive sync.
   </footer>
 
+  <!-- GIS -->
   <script src="https://accounts.google.com/gsi/client" async defer></script>
   <script src="app.js"></script>
 </body>
 </html>
-
