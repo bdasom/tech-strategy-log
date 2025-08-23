@@ -6,13 +6,16 @@
   <title>Tech/Service Strategy Log — Dasom</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <meta name="theme-color" content="#111827" />
-  <meta name="description" content="A lightweight personal archive for daily tech/service strategy notes." />
+  <meta name="description" content="Local-first archive for daily tech/service strategy notes with Google Drive sync." />
   <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🗂️</text></svg>">
   <style>
     .glass { backdrop-filter: blur(8px); background: rgba(255,255,255,0.06); }
     .prose-like p { margin: 0.25rem 0; }
     .prose-like pre { white-space: pre-wrap; }
     .tag { display:inline-block; padding:0.2rem 0.5rem; font-size:0.75rem; border-radius:9999px; border:1px solid #374151; }
+    .rte { min-height: 120px; outline: none; }
+    .rte a { text-decoration: underline; }
+    .thumb { width: 84px; height: 84px; object-fit: cover; border-radius: 0.75rem; border: 1px solid #374151; }
   </style>
 </head>
 <body class="min-h-screen bg-gray-950 text-gray-100">
@@ -22,11 +25,10 @@
         <span class="text-2xl">🗂️</span>
         <div>
           <h1 class="text-xl font-semibold">Tech/Service Strategy Log</h1>
-          <p class="text-xs text-gray-400">Daily archive · IT + Mobility · Healthcare · Media/Content · Greentech</p>
+          <p class="text-xs text-gray-400">Local-first · Google Drive sync · Rich editor</p>
         </div>
       </div>
       <div class="flex items-center gap-2">
-        <!-- 로컬 Export/Import -->
         <a href="#" id="exportMd" class="px-3 py-1.5 rounded-xl border border-gray-700 text-sm hover:bg-gray-800">Export .md</a>
         <a href="#" id="exportJson" class="px-3 py-1.5 rounded-xl border border-gray-700 text-sm hover:bg-gray-800">Export .json</a>
         <a href="#" id="exportCsv" class="px-3 py-1.5 rounded-xl border border-gray-700 text-sm hover:bg-gray-800">Export .csv</a>
@@ -34,7 +36,6 @@
           Import JSON
           <input type="file" id="importJson" accept="application/json" class="hidden">
         </label>
-        <!-- Google Drive 연동 버튼 -->
         <button id="googleSignIn" class="px-3 py-1.5 rounded-xl border border-gray-700 text-sm hover:bg-gray-800">Google 로그인</button>
         <button id="googleSignOut" class="px-3 py-1.5 rounded-xl border border-gray-700 text-sm hover:bg-gray-800 hidden">로그아웃</button>
         <button id="driveSync" class="px-3 py-1.5 rounded-xl border border-gray-700 text-sm hover:bg-gray-800">Drive에서 불러오기</button>
@@ -66,7 +67,7 @@
       <div class="flex gap-2">
         <button class="tab-btn px-3 py-2 rounded-xl border border-gray-700 text-sm hover:bg-gray-800" data-tab="capture">Capture</button>
         <button class="tab-btn px-3 py-2 rounded-xl border border-gray-700 text-sm hover:bg-gray-800" data-tab="archive">Archive</button>
-        <span class="text-xs text-gray-400 ml-2">Tip: 작은 기록도 OK. 오늘은 한 문장만 남겨도 됩니다.</span>
+        <span class="text-xs text-gray-400 ml-2">Tip: 작게라도 써보자. 오늘은 한 문장만 남겨도 돼요.</span>
       </div>
     </section>
 
@@ -87,25 +88,36 @@
         <div>
           <label class="block text-sm text-gray-300 mb-1">Category</label>
           <select id="category" class="w-full bg-gray-950 border border-gray-800 rounded-xl px-3 py-2">
-            <option>Company</option>
-            <option>Service</option>
-            <option>Technology</option>
-            <option>Trend</option>
-            <option>Other</option>
+            <option>Company</option><option>Service</option><option>Technology</option><option>Trend</option><option>Other</option>
           </select>
         </div>
         <div>
           <label class="block text-sm text-gray-300 mb-1">Industry</label>
           <select id="industry" class="w-full bg-gray-950 border border-gray-800 rounded-xl px-3 py-2">
-            <option>IT</option>
-            <option>Mobility</option>
-            <option>Healthcare</option>
-            <option>Media/Content</option>
-            <option>Greentech</option>
-            <option>Fintech</option>
-            <option>Other</option>
+            <option>IT</option><option>Mobility</option><option>Healthcare</option><option>Media/Content</option><option>Greentech</option><option>Fintech</option><option>Other</option>
           </select>
         </div>
+
+        <!-- Rich text toolbar + editor -->
+        <div class="md:col-span-2">
+          <div class="mb-2 flex flex-wrap gap-2">
+            <button type="button" class="rte-btn" data-cmd="bold"><b>B</b></button>
+            <button type="button" class="rte-btn italic" data-cmd="italic">I</button>
+            <button type="button" class="rte-btn" data-cmd="insertUnorderedList">• List</button>
+            <button type="button" class="rte-btn" data-cmd="formatBlock" data-value="H1">H1</button>
+            <button type="button" class="rte-btn" data-cmd="formatBlock" data-value="H2">H2</button>
+            <button type="button" class="rte-btn" data-cmd="formatBlock" data-value="BLOCKQUOTE">❝</button>
+            <button type="button" class="rte-btn" data-cmd="formatBlock" data-value="PRE">Code</button>
+            <button type="button" id="rteLink">Link</button>
+            <button type="button" id="rteImg">+ Image</button>
+            <button type="button" id="rteVideo">+ Video</button>
+            <input type="file" id="mediaFile" accept="image/*,video/*" class="hidden">
+          </div>
+          <label class="block text-sm text-gray-300 mb-1">Rich note (서식/미디어 가능)</label>
+          <div id="rich" class="rte w-full bg-gray-950 border border-gray-800 rounded-xl px-3 py-2" contenteditable="true" spellcheck="false"></div>
+        </div>
+
+        <!-- Lightweight fields -->
         <div class="md:col-span-2">
           <label class="block text-sm text-gray-300 mb-1">[오늘 읽은 것 / What I read]</label>
           <textarea id="read" rows="2" class="w-full bg-gray-950 border border-gray-800 rounded-xl px-3 py-2"></textarea>
@@ -127,7 +139,7 @@
           <input id="tags" class="w-full bg-gray-950 border border-gray-800 rounded-xl px-3 py-2" placeholder="ai, subscription, cross-border" />
         </div>
         <div class="md:col-span-2 flex items-center justify-between gap-3">
-          <div class="text-xs text-gray-400">저장 후 아래 Archive에서 검색/필터 가능합니다.</div>
+          <div class="text-xs text-gray-400">저장 시 자동 Drive 백업(로그인 상태) · 로그인 시 자동 복원</div>
           <div class="flex gap-2">
             <button type="reset" class="px-3 py-2 rounded-xl border border-gray-700 text-sm hover:bg-gray-800">Reset</button>
             <button type="submit" class="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-sm font-semibold">Save</button>
@@ -136,7 +148,7 @@
       </form>
     </section>
 
-    <!-- Archive list -->
+    <!-- Archive -->
     <section id="tab-archive" class="hidden rounded-2xl border border-gray-800 bg-gray-900 p-4">
       <div class="flex flex-wrap items-end gap-3 mb-4">
         <div>
@@ -146,25 +158,13 @@
         <div>
           <label class="block text-xs text-gray-400 mb-1">Category</label>
           <select id="fCategory" class="bg-gray-950 border border-gray-800 rounded-xl px-3 py-2">
-            <option value="">All</option>
-            <option>Company</option>
-            <option>Service</option>
-            <option>Technology</option>
-            <option>Trend</option>
-            <option>Other</option>
+            <option value="">All</option><option>Company</option><option>Service</option><option>Technology</option><option>Trend</option><option>Other</option>
           </select>
         </div>
         <div>
           <label class="block text-xs text-gray-400 mb-1">Industry</label>
           <select id="fIndustry" class="bg-gray-950 border border-gray-800 rounded-xl px-3 py-2">
-            <option value="">All</option>
-            <option>IT</option>
-            <option>Mobility</option>
-            <option>Healthcare</option>
-            <option>Media/Content</option>
-            <option>Greentech</option>
-            <option>Fintech</option>
-            <option>Other</option>
+            <option value="">All</option><option>IT</option><option>Mobility</option><option>Healthcare</option><option>Media/Content</option><option>Greentech</option><option>Fintech</option><option>Other</option>
           </select>
         </div>
         <div>
@@ -183,13 +183,10 @@
   </main>
 
   <footer class="mx-auto max-w-6xl px-4 py-10 text-center text-xs text-gray-500">
-    Built for Dasom · Local-first archive (browser storage) + Google Drive sync.
+    Built for Dasom · Local-first archive + Google Drive sync.
   </footer>
 
-  <!-- Google Identity & Drive API (토큰/REST 호출용) -->
   <script src="https://accounts.google.com/gsi/client" async defer></script>
-  <!-- (선택) gapi가 필요할 때를 대비해 포함하지만, 아래 코드는 fetch REST로 동작 -->
-
   <script src="app.js"></script>
 </body>
 </html>
