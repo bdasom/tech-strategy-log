@@ -75,7 +75,6 @@ document.querySelectorAll('.rte-btn').forEach(b => {
   b.addEventListener('click', () => {
     const cmd = b.dataset.cmd;
     const val = b.dataset.value || null;
-    // styleWithCSS true → span 스타일로 적용
     document.execCommand('styleWithCSS', false, true);
     document.execCommand(cmd, false, val);
   });
@@ -84,9 +83,7 @@ document.querySelectorAll('.rte-btn').forEach(b => {
 // Link
 $('rteLink').addEventListener('click', () => {
   const url = prompt('링크 URL?');
-  if (url) {
-    document.execCommand('createLink', false, url);
-  }
+  if (url) document.execCommand('createLink', false, url);
 });
 
 // Font family
@@ -106,7 +103,6 @@ $('rteSize').addEventListener('change', (e) => {
 // Text color
 $('rteColor').addEventListener('input', (e) => {
   const color = e.target.value;
-  // foreColor로 시도 + selection span 스타일 보정
   document.execCommand('foreColor', false, color);
   applyCssToSelection('color', color);
 });
@@ -114,7 +110,6 @@ $('rteColor').addEventListener('input', (e) => {
 // Highlight color
 $('rteHighlight').addEventListener('input', (e) => {
   const color = e.target.value;
-  // 크롬: hiliteColor, 일부 브라우저: backColor
   document.execCommand('hiliteColor', false, color);
   document.execCommand('backColor', false, color);
   applyCssToSelection('background-color', color);
@@ -123,7 +118,6 @@ $('rteHighlight').addEventListener('input', (e) => {
 // Clear formatting
 $('rteClear').addEventListener('click', () => {
   document.execCommand('removeFormat', false, null);
-  // 링크 제거는 별도
   unwrapTag('A');
 });
 
@@ -138,15 +132,13 @@ function applyCssToSelection(prop, value) {
   const editor = $('rich');
   if (!range || !editor.contains(range.commonAncestorContainer)) {
     editor.focus();
-    return; // 범위 없으면 일단 포커스만
+    return;
   }
   if (range.collapsed) {
-    // 커서만 있을 때: 앞으로 입력될 텍스트에 스타일 적용되도록 span 삽입
     const span = document.createElement('span');
     span.style.setProperty(prop, value);
-    span.innerHTML = '&#8203;'; // zero-width space
+    span.innerHTML = '&#8203;';
     range.insertNode(span);
-    // 커서를 span 끝으로
     const newRange = document.createRange();
     newRange.setStart(span, 1);
     newRange.setEnd(span, 1);
@@ -155,22 +147,15 @@ function applyCssToSelection(prop, value) {
     return;
   }
   try {
-    // 선택된 내용을 span으로 감싸기
     const wrapper = document.createElement('span');
     wrapper.style.setProperty(prop, value);
     range.surroundContents(wrapper);
   } catch (err) {
-    // 부분 선택이 텍스트/요소 섞여 있으면 surroundContents가 실패할 수 있음 → execCommand fallback
     document.execCommand('styleWithCSS', false, true);
-    if (prop === 'font-size') {
-      document.execCommand('fontSize', false, 3); // 임시
-    } else if (prop === 'font-family') {
-      document.execCommand('fontName', false, value);
-    } else if (prop === 'color') {
-      document.execCommand('foreColor', false, value);
-    } else if (prop === 'background-color') {
-      document.execCommand('hiliteColor', false, value);
-    }
+    if (prop === 'font-size') document.execCommand('fontSize', false, 3);
+    else if (prop === 'font-family') document.execCommand('fontName', false, value);
+    else if (prop === 'color') document.execCommand('foreColor', false, value);
+    else if (prop === 'background-color') document.execCommand('hiliteColor', false, value);
   }
 }
 function unwrapTag(tagName) {
@@ -298,6 +283,7 @@ function renderList() {
           <div class="mt-1 text-base font-semibold">${escapeHtml(item.one || '(no one-liner)')}</div>
         </div>
         <div class="flex gap-2">
+          <button data-act="feedback" data-id="${item.id}" class="px-3 py-1.5 rounded-xl border border-gray-700 text-xs hover:bg-gray-800">AI Feedback</button>
           <button data-act="copy" data-id="${item.id}" class="px-3 py-1.5 rounded-xl border border-gray-700 text-xs hover:bg-gray-800">Copy MD</button>
           <button data-act="edit" data-id="${item.id}" class="px-3 py-1.5 rounded-xl border border-gray-700 text-xs hover:bg-gray-800">Edit</button>
           <button data-act="delete" data-id="${item.id}" class="px-3 py-1.5 rounded-xl border border-gray-700 text-xs hover:bg-gray-800">Delete</button>
@@ -310,13 +296,17 @@ function renderList() {
         ${richSection(item.rich)}
         ${tagsView(item.tags)}
       </div>
+      <div id="ai-${item.id}" class="mt-3 hidden rounded-xl border border-indigo-800/40 bg-indigo-900/20 p-3 text-sm">
+        <div class="mb-1 text-indigo-300">AI Feedback</div>
+        <div class="whitespace-pre-wrap" data-ai-body></div>
+      </div>
     `;
     container.appendChild(card);
   });
   container.querySelectorAll('button').forEach(btn => {
     const id = btn.dataset.id;
     const act = btn.dataset.act;
-    btn.addEventListener('click', () => {
+    btn.addEventListener('click', async () => {
       if (act === 'delete') {
         const ok = confirm('Delete this entry?'); if (!ok) return;
         const arr = load().filter(e => e.id !== id); saveAll(arr); dirty = true; renderList();
@@ -338,6 +328,17 @@ function renderList() {
       } else if (act === 'copy') {
         const it = load().find(e => e.id === id);
         navigator.clipboard.writeText(toMarkdown([it])); alert('Copied as Markdown ✅');
+      } else if (act === 'feedback') {
+        const it = load().find(e => e.id === id); if (!it) return;
+        try {
+          const el = document.querySelector(`#ai-${id}`);
+          el.classList.remove('hidden');
+          el.querySelector('[data-ai-body]').textContent = 'Thinking…';
+          const text = await getAIFeedback(it);
+          el.querySelector('[data-ai-body]').textContent = text;
+        } catch (err) {
+          alert('Feedback error: ' + err.message);
+        }
       }
     });
   });
@@ -347,7 +348,7 @@ renderList();
 function section(title, text) { if (!text) return ''; return `<p><span class="text-gray-400">${title}:</span> ${escapeHtml(text)}</p>`; }
 function richSection(html) { if (!html) return ''; return `<div class="mt-2 border border-gray-800 rounded-xl p-3">${html}</div>`; }
 function tagsView(tags) { if (!tags || !tags.length) return ''; return `<div class="mt-2 flex flex-wrap gap-1">${tags.map(t => `<span class="tag">${escapeHtml(t)}</span>`).join('')}</div>`; }
-function escapeHtml(s) { return (s || '').replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&quot;',"'":'&#039;'}[m])); }
+function escapeHtml(s) { return (s || '').replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&gt;','>':'&quot;',"'":'&#039;'}[m])); }
 
 // Exporters
 function download(filename, text) {
@@ -523,3 +524,42 @@ async function uploadMediaToDrive(file) {
   return { id: info.id, mimeType: info.mimeType, link: info.webContentLink || info.webViewLink };
 }
 
+// =======================
+// AI Feedback (serverless)
+// =======================
+async function getAIFeedback(entry) {
+  const res = await fetch('/api/feedback', {
+    method: 'POST',
+    headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({ entry })
+  });
+  if (!res.ok) {
+    const t = await res.text();
+    throw new Error('Server error: ' + t);
+  }
+  const data = await res.json();
+  return data.feedback || '(no feedback)';
+}
+
+// Draft feedback button
+$('askFeedback').addEventListener('click', async () => {
+  const draft = {
+    id: editingId || 'draft',
+    date: $('date').value || today(),
+    lang: $('lang').value,
+    category: $('category').value,
+    industry: $('industry').value,
+    read: $('read').value.trim(),
+    idea: $('idea').value.trim(),
+    flow: $('flow').value.trim(),
+    rich: $('rich').innerHTML.trim(),
+    one: $('one').value.trim(),
+    tags: ($('tags').value || '').split(',').map(s => s.trim()).filter(Boolean),
+  };
+  try {
+    const text = await getAIFeedback(draft);
+    alert(text);
+  } catch (err) {
+    alert('Feedback error: ' + err.message);
+  }
+});
