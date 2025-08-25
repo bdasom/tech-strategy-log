@@ -433,3 +433,7 @@ if (autoEl) {
     localStorage.setItem(AUTO_KEY, autoEl.checked ? '1' : '0');
   });
 }
+
+document.addEventListener('DOMContentLoaded', () => {
+  alert('JS Loaded OK');
+});
