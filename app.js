@@ -360,4 +360,76 @@ async function backupToDrive(){
   try{
     if(!accessToken) return ensureSignin();
     const id=driveFileId||await findOrCreateFile();
-    const payload=
+    const payload=entries();
+    const metadata={ name:'tech-strategy-log.json', mimeType:'application/json' };
+    const form=new FormData();
+    form.append('metadata', new Blob([JSON.stringify(metadata)],{type:'application/json'}));
+    form.append('file', new Blob([JSON.stringify(payload,null,2)],{type:'application/json'}));
+    await driveFetch(`https://www.googleapis.com/upload/drive/v3/files/${id}?uploadType=multipart`,{method:'PATCH',body:form});
+    console.log('Drive backup OK');
+  } catch(e){ console.error('backupToDrive failed:', e); }
+}
+async function syncFromDrive(){
+  try{
+    if(!accessToken) return ensureSignin();
+    const id=driveFileId||await findOrCreateFile();
+    const text=await (await driveFetch(`https://www.googleapis.com/drive/v3/files/${id}?alt=media`)).text();
+    let remote=[]; try{ remote=JSON.parse(text); }catch{}
+    if(!Array.isArray(remote)) throw new Error('REMOTE_NOT_ARRAY');
+
+    const local=load(); const byId=new Map();
+    [...local, ...remote].forEach(e=>{ const prev=byId.get(e.id); if(!prev) byId.set(e.id,e); else { const a=prev.updatedAt||prev.createdAt||''; const b=e.updatedAt||e.createdAt||''; if(b>a) byId.set(e.id,e); }});
+    const merged=Array.from(byId.values());
+    saveAll(merged); renderList(); dirty=false;
+    console.log('Drive sync OK (merge)');
+  } catch(e){ console.error('syncFromDrive failed:', e); }
+}
+async function uploadMediaToDrive(file){
+  if(!accessToken){ await ensureSignin(); }
+  const metadata={ name:file.name, mimeType:file.type };
+  const form=new FormData(); form.append('metadata', new Blob([JSON.stringify(metadata)],{type:'application/json'})); form.append('file', file);
+  const created=await (await driveFetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart',{method:'POST',body:form})).json();
+  await driveFetch(`https://www.googleapis.com/drive/v3/files/${created.id}/permissions`,{method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({role:'reader', type:'anyone'})});
+  const info=await (await driveFetch(`https://www.googleapis.com/drive/v3/files/${created.id}?fields=id,mimeType,webContentLink,webViewLink`)).json();
+  return { id:info.id, mimeType:info.mimeType, link:info.webContentLink||info.webViewLink };
+}
+
+// =======================
+// AI Feedback (serverless)
+// =======================
+async function getAIFeedback(entry){
+  const res=await fetch('/api/feedback',{ method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ entry }) });
+  if(!res.ok){ const t=await res.text(); throw new Error('Server error: ' + t); }
+  const data=await res.json(); return data.feedback || '(no feedback)';
+}
+
+// Draft 버튼(수동)
+$('askFeedback')?.addEventListener('click', async () => {
+  const draft = {
+    id: editingId || 'draft',
+    date: $('date').value || today(),
+    lang: $('lang').value,
+    category: $('category').value,
+    industry: $('industry').value,
+    read: $('read').value.trim(),
+    idea: $('idea').value.trim(),
+    flow: $('flow').value.trim(),
+    rich: $('rich').innerHTML.trim(),
+    one: $('one').value.trim(),
+    tags: ($('tags').value || '').split(',').map(s => s.trim()).filter(Boolean),
+  };
+  try { alert(await getAIFeedback(draft)); }
+  catch (err) { alert('Feedback error: ' + err.message); }
+});
+
+// =======================
+// Auto AI 토글 (로컬 저장)
+// =======================
+function isAutoAIEnabled(){ return localStorage.getItem(AUTO_KEY)==='1'; }
+const autoEl = $('autoAI');
+if (autoEl) {
+  autoEl.checked = isAutoAIEnabled();
+  autoEl.addEventListener('change', () => {
+    localStorage.setItem(AUTO_KEY, autoEl.checked ? '1' : '0');
+  });
+}
