@@ -6,7 +6,7 @@
   <title>Tech/Service Strategy Log — Dasom</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <meta name="theme-color" content="#111827" />
-  <meta name="description" content="Local-first archive for daily tech/service strategy notes with Google Drive sync." />
+  <meta name="description" content="Local-first archive for daily tech/service strategy notes with Google Drive sync + AI feedback." />
   <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🗂️</text></svg>">
   <style>
     .glass { backdrop-filter: blur(8px); background: rgba(255,255,255,0.06); }
@@ -28,7 +28,7 @@
         <span class="text-2xl">🗂️</span>
         <div>
           <h1 class="text-xl font-semibold">Tech/Service Strategy Log</h1>
-          <p class="text-xs text-gray-400">Local-first · Google Drive sync · Rich editor</p>
+          <p class="text-xs text-gray-400">Local-first · Google Drive sync · Rich editor · AI feedback</p>
         </div>
       </div>
       <div class="flex items-center gap-2">
@@ -59,6 +59,7 @@
           </div>
           <div class="flex items-center gap-2">
             <button id="quickOneLiner" class="px-3 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-sm">+ One-line quick note</button>
+            <button id="askFeedback" class="px-3 py-2 rounded-xl border border-gray-700 text-sm hover:bg-gray-800">AI Feedback (draft)</button>
             <button id="darkToggle" class="px-3 py-2 rounded-xl border border-gray-700 text-sm hover:bg-gray-800">🌗</button>
           </div>
         </div>
@@ -217,11 +218,10 @@
   </main>
 
   <footer class="mx-auto max-w-6xl px-4 py-10 text-center text-xs text-gray-500">
-    Built for Dasom · Local-first archive + Google Drive sync.
+    Built for Dasom · Local-first archive + Google Drive sync + AI feedback.
   </footer>
 
   <script src="https://accounts.google.com/gsi/client" async defer></script>
   <script src="app.js"></script>
 </body>
 </html>
-
